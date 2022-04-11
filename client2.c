@@ -33,9 +33,11 @@ int main(int argc, char *argv[]) {
   recv(dS, msg, sizeof(msg), 0) ;
   printf("Message reçu : %s\n", msg) ;
 
-
-  char * m = "Je répond" ;
-  send(dS, m, strlen(m) , 0) ;
+  
+  char rep [100];
+  printf("Entrez une réponse : \n");
+  scanf("%[$\n]", rep);
+  send(dS, rep, strlen(rep) , 0) ;
   printf("Réponse Envoyé \n");
 
   /*int r;

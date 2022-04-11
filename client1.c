@@ -19,7 +19,10 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
-  char * m = "B2on" ;
+
+  char m [100] ;
+  printf("Entrez un message : \n");
+  scanf("%[$\n]", m);
   while(send(dS, m, strlen(m) , 0)==-1){
     printf("Je tente d'envoyer");
     sleep(1);
