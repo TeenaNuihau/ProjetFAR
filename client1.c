@@ -23,7 +23,8 @@ int main(int argc, char *argv[]) {
 
   char m [100] ;
   printf("Entrez un message : \n");
-  fgets(m,100,stdin);
+  int n = fgets(m,100,stdin);
+  m[n] = '\0';
   send(dS, m, strlen(m) , 0);
   
   printf("Message Envoyé \n");

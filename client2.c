@@ -37,7 +37,8 @@ int main(int argc, char *argv[]) {
   
   char rep [100];
   printf("Entrez une réponse : \n");
-  fgets(rep,100,stdin);
+  int n = fgets(rep,100,stdin);
+  rep[n] = '\0';
   send(dS, rep, strlen(rep) , 0) ;
   printf("Réponse Envoyé \n");
 
