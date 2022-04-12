@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
   char m [100] ;
   printf("Entrez un message : \n");
-  scanf("%[$\n]", m);
+  fgets(m,100,stdin);
   while(send(dS, m, strlen(m) , 0)==-1){
     printf("Je tente d'envoyer");
     sleep(1);
