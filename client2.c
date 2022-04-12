@@ -24,14 +24,15 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in aS;
   aS.sin_family = AF_INET;
   inet_pton(AF_INET,argv[1],&(aS.sin_addr)) ;
-  aS.sin_port = htons(atoi(argv[2])) ;
+  // aS.sin_port = htons(atoi(argv[2]));
+  aS.sin_port = htons(3000);
   socklen_t lgA = sizeof(struct sockaddr_in) ;
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
   char msg [100] ;
-  recv(dS, msg, sizeof(msg), 0) ;
-  printf("Message reçu : %s\n", msg) ;
+  recv(dS, msg, 100, 0) ;
+  printf("Message reçu : %s \n", msg) ;
 
   
   char rep [100];

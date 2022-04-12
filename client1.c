@@ -14,7 +14,8 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in aS;
   aS.sin_family = AF_INET;
   inet_pton(AF_INET,argv[1],&(aS.sin_addr)) ;
-  aS.sin_port = htons(atoi(argv[2])) ;
+  // aS.sin_port = htons(atoi(argv[2]));
+  aS.sin_port = htons(3000);
   socklen_t lgA = sizeof(struct sockaddr_in) ;
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
@@ -23,10 +24,8 @@ int main(int argc, char *argv[]) {
   char m [100] ;
   printf("Entrez un message : \n");
   fgets(m,100,stdin);
-  while(send(dS, m, strlen(m) , 0)==-1){
-    printf("Je tente d'envoyer");
-    sleep(1);
-  }
+  send(dS, m, strlen(m) , 0);
+  
   printf("Message Envoyé \n");
 
   char rep [100];

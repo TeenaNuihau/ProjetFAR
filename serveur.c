@@ -16,7 +16,8 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in ad;
   ad.sin_family = AF_INET;
   ad.sin_addr.s_addr = INADDR_ANY ;
-  ad.sin_port = htons(atoi(argv[1])) ;
+  // ad.sin_port = htons(atoi(argv[1])) ;
+  ad.sin_port = htons(3000);
   bind(dS, (struct sockaddr*)&ad, sizeof(ad)) ;
   printf("Socket Nommé\n");
 
@@ -33,7 +34,7 @@ int main(int argc, char *argv[]) {
 
   char msg [100] ;
   recv(dSC1, msg, 100, 0) ;
-  printf("Message reçu : %s\n", msg) ;
+  printf("Message reçu : %s \n", msg) ;
   
   int r = 10 ;
  
