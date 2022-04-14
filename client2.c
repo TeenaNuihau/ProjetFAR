@@ -32,25 +32,31 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
-  char msg [100] ;
-  recv(dS, msg, 100, 0) ;
-  printf("Message reçu : %s \n", msg) ;
+  while(1) {
+
+    char msg [100] ;
+    recv(dS, msg, 100, 0) ;
+    printf("Message reçu : %s \n", msg) ;
+
+    
+    // char rep [100];
+    // printf("Entrez une réponse : \n");
+    // int n = fgets(rep,100,stdin);
+    // rep[n] = '\0';
+
+    char * m = (char *) malloc( MAX_LENGTH );
+    printf("Entrez un message : ");
+    fgets( m, MAX_LENGTH, stdin );  
+
+    send(dS, m, MAX_LENGTH , 0) ;
+
+    free( m );
+
+    printf("Réponse Envoyé \n");
+
+  }
 
   
-  // char rep [100];
-  // printf("Entrez une réponse : \n");
-  // int n = fgets(rep,100,stdin);
-  // rep[n] = '\0';
-
-  char * m = (char *) malloc( MAX_LENGTH );
-  printf("Entrez un message : ");
-  fgets( m, MAX_LENGTH, stdin );  
-
-  send(dS, m, MAX_LENGTH , 0) ;
-
-  free( m );
-
-  printf("Réponse Envoyé \n");
 
   /*int r;
   recv(dS, &r, sizeof(int), 0) ;

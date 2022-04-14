@@ -28,25 +28,38 @@ int main(int argc, char *argv[]) {
 
   struct sockaddr_in aC ;
   socklen_t lg = sizeof(struct sockaddr_in) ;
+
+  // Connexion Client 1
   int dSC1 = accept(dS, (struct sockaddr*) &aC,&lg) ;
   printf("Client 1 Connecté\n");
+  char* wait = "wait";
+  send(dSC1, wait, MAX_LENGTH , 0);
 
+  // Connexion Client 2
   int dSC2 = accept(dS, (struct sockaddr*) &aC,&lg) ;
   printf("Client 2 Connecté\n");
+  char* sender = "send";
+  send(dSC2, sender, MAX_LENGTH , 0);
 
-  char msg [MAX_LENGTH] ;
-  recv(dSC1, msg, MAX_LENGTH, 0) ;
-  printf("Message reçu : %s \n", msg) ;
- 
-  send(dSC2, msg, MAX_LENGTH, 0) ;
-  printf("Message Envoyé\n");
+  while (1) {
+
+    char msg [MAX_LENGTH] ;
+    recv(dSC2, msg, MAX_LENGTH, 0) ;
+    printf("Premier Message reçu : %s \n", msg) ;
   
-  char rep [MAX_LENGTH] ;
-  recv(dSC2, rep, MAX_LENGTH, 0) ;
-  printf("Réponse reçu : %s\n", rep) ;
+    send(dSC1, msg, MAX_LENGTH, 0) ;
+    printf("Premier Message Envoyé\n");
+    
+    char rep [MAX_LENGTH] ;
+    recv(dSC1, rep, MAX_LENGTH, 0) ;
+    printf("Deuxieme Réponse reçu : %s\n", rep) ;
 
-  send(dSC1, rep, MAX_LENGTH, 0) ;
-  printf("Réponse envoyée\n");
+    send(dSC2, rep, MAX_LENGTH, 0) ;
+    printf("Deuxieme Réponse envoyée\n");
+
+  }
+
+
 
   
   shutdown(dSC1, 2) ; 
