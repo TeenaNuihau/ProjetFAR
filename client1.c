@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MAX_LENGTH 100
+
 int main(int argc, char *argv[]) {
 
   printf("Début programme\n");
@@ -21,18 +23,26 @@ int main(int argc, char *argv[]) {
   printf("Socket Connecté\n");
 
 
-  char m [100] ;
-  printf("Entrez un message : \n");
-  int n = fgets(m,100,stdin);
-  m[n] = '\0';
-  send(dS, m, strlen(m) , 0);
+  // char m [100] ;
+  // printf("Entrez un message : \n");
+  // int n = fgets(m,100,stdin);
+  // m[n] = '\0';
+
+  char * m = (char *) malloc( MAX_LENGTH );
+  printf("Entrez un message : ");
+  fgets( m, MAX_LENGTH, stdin );  
+
+  send(dS, m, MAX_LENGTH , 0);
+
+  free( m );
   
   printf("Message Envoyé \n");
 
-  char rep [100];
-  recv(dS, rep, 100, 0) ;
-  printf("Réponse reçue : %s\n", rep) ;
+  char rep [MAX_LENGTH];
+  recv(dS, rep, MAX_LENGTH, 0) ;
+  printf("Réponse reçue : ") ;
+  puts(rep);
 
   shutdown(dS,2) ;
-  printf("Fin du programme");
+  printf("Fin du programme \n");
 }

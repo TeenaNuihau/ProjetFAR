@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MAX_LENGTH 100
+
 int main(int argc, char *argv[]) {
   
   printf("Début programme\n");
@@ -32,25 +34,23 @@ int main(int argc, char *argv[]) {
   int dSC2 = accept(dS, (struct sockaddr*) &aC,&lg) ;
   printf("Client 2 Connecté\n");
 
-  char msg [100] ;
-  recv(dSC1, msg, 100, 0) ;
+  char msg [MAX_LENGTH] ;
+  recv(dSC1, msg, MAX_LENGTH, 0) ;
   printf("Message reçu : %s \n", msg) ;
-  
-  int r = 10 ;
  
-  send(dSC2, msg, 100, 0) ;
+  send(dSC2, msg, MAX_LENGTH, 0) ;
   printf("Message Envoyé\n");
   
-  char rep [100] ;
-  recv(dSC2, rep, 100, 0) ;
+  char rep [MAX_LENGTH] ;
+  recv(dSC2, rep, MAX_LENGTH, 0) ;
   printf("Réponse reçu : %s\n", rep) ;
 
-  send(dSC1, rep, 100, 0) ;
+  send(dSC1, rep, MAX_LENGTH, 0) ;
   printf("Réponse envoyée\n");
 
   
   shutdown(dSC1, 2) ; 
   shutdown(dSC2, 2) ; 
   shutdown(dS, 2) ;
-  printf("Fin du programme");
+  printf("Fin du programme \n");
 }
