@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
       send(dS, m, MAX_LENGTH , 0);
 
       free( m );
-      m = (char *) realloc(m, MAX_LENGTH);
+      m = (char *) malloc(MAX_LENGTH);
       
       printf("Premier Message Envoyé \n");
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     send(dS, m, MAX_LENGTH , 0) ;
 
     free( m );
-    m = (char *) realloc(m, MAX_LENGTH);
+    m = (char *)malloc( MAX_LENGTH);
 
     printf("Réponse Envoyé \n");
 
