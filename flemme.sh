@@ -1,3 +1,2 @@
-gcc -o client1 client1.c 
-gcc -o client2 client2.c
-gcc -o serveur serveur.c
+gcc -pthread -o client1 client1.c 
+gcc -pthread -o serveur serveur.c

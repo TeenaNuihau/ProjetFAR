@@ -4,8 +4,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define MAX_LENGTH 100
+
+
+void recevoir(int* s){
+  char* m = (char *) malloc(MAX_LENGTH);
+  while(1){
+    recv(*s, m, MAX_LENGTH, 0) ;
+    printf("Message reçu : %s",m) ;
+    //free( m );
+  }
+  shutdown(*s,2) ;
+}
+
+void envoyer(int* s){
+  char* m = (char *) malloc(MAX_LENGTH);
+  while(1){
+    printf("Entrez le premier message : ");
+    fgets( m, MAX_LENGTH, stdin ); 
+    send(*s, m, MAX_LENGTH , 0);
+    //free( m );
+  }
+  shutdown(*s,2) ;
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -22,66 +46,13 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
+  pthread_t thread[2];
+  int tReception;
+  tReception=pthread_create(&thread[0], NULL,(void *)recevoir,&dS); 
+  int tEnvoi;
+  tEnvoi=pthread_create(&thread[1], NULL,(void *)envoyer,&dS); 
+  pthread_join(thread[0], NULL);
+  pthread_join(thread[1], NULL);
+  printf("J'ai commencé l'émission / reception \n");
 
-  // char m [100] ;
-  // printf("Entrez un message : \n");
-  // int n = fgets(m,100,stdin);
-  // m[n] = '\0';
-
-  // Réponse serveur (waiter or sender)
-  char role [MAX_LENGTH] ;
-  recv(dS, role, MAX_LENGTH, 0);
-  puts(role);
-
-  int result = strcmp(role, "send");
-  char * m = (char *) malloc( MAX_LENGTH );
-  if (result==0) {
-
-    while (1) {
-
-      printf("Entrez le premier message : ");
-      fgets( m, MAX_LENGTH, stdin );  
-
-      send(dS, m, MAX_LENGTH , 0);
-
-      free( m );
-      m = (char *) malloc(MAX_LENGTH);
-      
-      printf("Premier Message Envoyé \n");
-
-      char rep [MAX_LENGTH];
-      recv(dS, rep, MAX_LENGTH, 0) ;
-      printf("Deuxième Réponse reçue : ") ;
-      puts(rep);
-
-    }
-
-  } else {
-
-    while(1) {
-
-    char msg [100] ;
-    recv(dS, msg, 100, 0) ;
-    printf("Premier Message reçu : %s \n", msg) ;
-
-    printf("Entrez le deuxième message : ");
-    fgets( m, MAX_LENGTH, stdin );  
-
-    send(dS, m, MAX_LENGTH , 0) ;
-
-    free( m );
-    m = (char *)malloc( MAX_LENGTH);
-
-    printf("Réponse Envoyé \n");
-
-    }
-
-  }
-
-  
-
-  
-
-  shutdown(dS,2) ;
-  printf("Fin du programme \n");
 }

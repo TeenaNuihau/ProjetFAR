@@ -5,30 +5,38 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
 
-void communiquerWithCli(int socketCli , int i , int descClients[]){
+
+typedef struct {
+  int* dSC;
+  int* desc[MAX_CLIENTS];
+} para;
+
+
+void communiquerWithCli(para* p){
+  int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
+  printf("Nombre de clients : %d" ,nbcli);
+  printf("Je tente de communiquer");
   while(1){
+    sleep(1);
+    printf("Je boucle");
     char msg [MAX_LENGTH] ;
-    recv(socketCli, msg, MAX_LENGTH, 0) ;
+    recv(*(p->dSC), msg, MAX_LENGTH, 0) ;
     printf("Premier Message reçu : %s \n", msg) ;
-    for(int j=0;j<=i;j++){
-      if(socketCli!=descClients[j]){
-        send(descClients[j], msg, MAX_LENGTH,0);
+    for(int j=0;j<nbcli;j++){
+      if(*(p->dSC)!=*(p->desc[j])){
+        printf("Je parle avec le client %d",j);
+        send(*(p->desc[j]), msg, MAX_LENGTH,0);
       }
     }
     printf("Message Envoyé\n");
   }
-  shutdown(socketCli,2); // MAX_CLIENTS
+  shutdown(*(p->dSC),2); // MAX_CLIENTS
 }
-
-typedef struct {
-  int dSC;
-  int i;
-  int desc[MAX_CLIENTS];
-} para;
 
 
 int main(int argc, char *argv[]) {
@@ -54,48 +62,27 @@ int main(int argc, char *argv[]) {
   
   pthread_t thread[MAX_CLIENTS]; 
   int desc[MAX_CLIENTS];
-  long i =0;
+  long i=0;
 
   while (1 && i<=MAX_CLIENTS) {
     // Connexion Client 
     int dSC = accept(dS, (struct sockaddr*) &aC,&lg) ;
     printf("Client Connecté\n");
     desc[i]=dSC;
-    
-    //char* wait = "wait";
-    //send(dSC1, wait, MAX_LENGTH , 0);
-    
+
     para p;
-    p.dSC=dSC;
-    p.i=i;
-    for(int l=0;l<MAX_CLIENTS;l++)
-      p.desc[l]=desc[l];
-
-    if(i>1){
-      pthread_create(&thread[i], NULL,(void *)communiquerWithCli,&p); 
-      pthread_join(thread[i], NULL); 
-      /*
-      char msg [MAX_LENGTH] ;
-      recv(dSC2, msg, MAX_LENGTH, 0) ;
-      printf("Premier Message reçu : %s \n", msg) ;
-    
-      send(dSC1, msg, MAX_LENGTH, 0) ;
-      printf("Premier Message Envoyé\n");
+    p.dSC=&dSC;
+    for(int l=0;l<=i;l++)
+      p.desc[l]=&desc[l];
       
-      char rep [MAX_LENGTH] ;
-      recv(dSC1, i++;rep, MAX_LENGTH, 0) ;
-      printf("Deuxieme Réponse reçu : %s\n", rep) ;
+    int t;
+    t=pthread_create(&thread[i], NULL,(void *)communiquerWithCli,&p); 
 
-      send(dSC2, rep, MAX_LENGTH, 0) ;
-      printf("Deuxieme Réponse envoyée\n");
-      */
-    }
+    
     i++;
     printf("%ld",i);
   }
   
-  /*shutdown(dSC1, 2) ; 
-  shutdown(dSC2, 2) ; 
-  shutdown(dS, 2) ;*/
+
   printf("Fin du programme \n");
 }
