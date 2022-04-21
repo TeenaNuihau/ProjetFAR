@@ -9,6 +9,7 @@
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
+#define PORT 3000
 
 
 typedef struct {
@@ -16,20 +17,23 @@ typedef struct {
   int* desc[MAX_CLIENTS];
 } para;
 
+long i=-1;
+
 
 void communiquerWithCli(para* p){
-  int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
-  printf("Nombre de clients : %d" ,nbcli);
-  printf("Je tente de communiquer");
+  i++;
+  //int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
+  printf("Nombre de clients : %ld\n" ,i);
+  printf("Je tente de communiquer\n");
   while(1){
     sleep(1);
-    printf("Je boucle");
+    printf("Je boucle\n");
     char msg [MAX_LENGTH] ;
     recv(*(p->dSC), msg, MAX_LENGTH, 0) ;
     printf("Premier Message reçu : %s \n", msg) ;
-    for(int j=0;j<nbcli;j++){
+    for(int j=0;j<i;j++){
       if(*(p->dSC)!=*(p->desc[j])){
-        printf("Je parle avec le client %d",j);
+        printf("Je parle avec le client %d\n",j);
         send(*(p->desc[j]), msg, MAX_LENGTH,0);
       }
     }
@@ -50,7 +54,7 @@ int main(int argc, char *argv[]) {
   ad.sin_family = AF_INET;
   ad.sin_addr.s_addr = INADDR_ANY ;
   // ad.sin_port = htons(atoi(argv[1])) ;
-  ad.sin_port = htons(3000);
+  ad.sin_port = htons(PORT);
   bind(dS, (struct sockaddr*)&ad, sizeof(ad)) ;
   printf("Socket Nommé\n");
 
@@ -62,24 +66,24 @@ int main(int argc, char *argv[]) {
   
   pthread_t thread[MAX_CLIENTS]; 
   int desc[MAX_CLIENTS];
-  long i=0;
+  long cpt=0;
 
   while (1 && i<=MAX_CLIENTS) {
     // Connexion Client 
     int dSC = accept(dS, (struct sockaddr*) &aC,&lg) ;
     printf("Client Connecté\n");
-    desc[i]=dSC;
+    desc[cpt]=dSC;
 
     para p;
     p.dSC=&dSC;
-    for(int l=0;l<=i;l++)
+    for(int l=0;l<=cpt;l++)
       p.desc[l]=&desc[l];
       
     int t;
     t=pthread_create(&thread[i], NULL,(void *)communiquerWithCli,&p); 
 
     
-    i++;
+    cpt++;
     printf("%ld",i);
   }
   
