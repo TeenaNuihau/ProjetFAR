@@ -9,7 +9,7 @@
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
-#define PORT 3000
+#define PORT 3002
 
 
 typedef struct {
@@ -17,7 +17,7 @@ typedef struct {
   int* desc[MAX_CLIENTS];
 } para;
 
-long i=-1;
+long i=0;
 
 
 void communiquerWithCli(para* p){
@@ -26,18 +26,22 @@ void communiquerWithCli(para* p){
   printf("Nombre de clients : %ld\n" ,i);
   printf("Je tente de communiquer\n");
   while(1){
-    sleep(1);
+    
     printf("Je boucle\n");
     char msg [MAX_LENGTH] ;
-    recv(*(p->dSC), msg, MAX_LENGTH, 0) ;
-    printf("Premier Message reçu : %s \n", msg) ;
-    for(int j=0;j<i;j++){
-      if(*(p->dSC)!=*(p->desc[j])){
-        printf("Je parle avec le client %d\n",j);
-        send(*(p->desc[j]), msg, MAX_LENGTH,0);
+    for (int k=0;k<i;k++) {
+      if (recv(*(p->desc[k]), msg, MAX_LENGTH, 0)!=-1) {
+        printf("Premier Message reçu : %s \n", msg) ;
+        for(int j=0;j<i;j++){
+          if(*(p->desc[k])!=*(p->desc[j])){
+            printf("Je parle avec le client %d\n",j);
+            send(*(p->desc[j]), msg, MAX_LENGTH,0);
+          }
+        }
+        printf("Message Envoyé\n");
       }
+    printf("k = %d \n", k);
     }
-    printf("Message Envoyé\n");
   }
   shutdown(*(p->dSC),2); // MAX_CLIENTS
 }
@@ -84,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     
     cpt++;
-    printf("%ld",i);
+    printf("i = %ld \n",i);
   }
   
 
