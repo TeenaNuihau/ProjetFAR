@@ -9,43 +9,48 @@
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
-#define PORT 3002
+#define PORT 3001
+
+int desc[MAX_CLIENTS];
+
+long i=-1;
 
 
-typedef struct {
-  int* dSC;
-  int* desc[MAX_CLIENTS];
-} para;
-
-long i=0;
-
-
-void communiquerWithCli(para* p){
-  i++;
+void communiquerWithCli(){
   //int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
-  printf("Nombre de clients : %ld\n" ,i);
-  printf("Je tente de communiquer\n");
   while(1){
-    
-    printf("Je boucle\n");
-    char msg [MAX_LENGTH] ;
-    for (int k=0;k<i;k++) {
-      if (recv(*(p->desc[k]), msg, MAX_LENGTH, 0)!=-1) {
-        printf("Premier Message reçu : %s \n", msg) ;
-        for(int j=0;j<i;j++){
-          if(*(p->desc[k])!=*(p->desc[j])){
-            printf("Je parle avec le client %d\n",j);
-            send(*(p->desc[j]), msg, MAX_LENGTH,0);
+    printf("Nombre de clients : %ld\n" ,i);
+    if(i>0){
+      printf("Je tente de communiquer\n");
+      while(1){
+        printf("Je boucle\n");
+        char msg [MAX_LENGTH] ;
+        for (int k=0;k<=i;k++) {
+          printf("desc[%d] = %d \n",k, desc[k]);
+          if (recv(desc[k], msg, MAX_LENGTH, 0)!=-1) {
+            printf("Premier Message reçu : %s \n", msg) ;
+            for(int j=0;j<=i;j++){
+              if(desc[k]!=desc[j]){
+                printf("Je parle avec le client %d\n",j);
+                send(desc[j], msg, MAX_LENGTH,0);
+              }
+            }
+          printf("Message Envoyé\n");
           }
+          printf("k = %d \n", k);
         }
-        printf("Message Envoyé\n");
       }
-    printf("k = %d \n", k);
+      i--;
+      shutdown(desc[i],2); // MAX_CLIENTS
     }
   }
-  shutdown(*(p->dSC),2); // MAX_CLIENTS
 }
 
+void metAjourTableau(int socket){
+  i++;
+  desc[i]=socket;
+  printf("Je met à jour : %d \n",desc[i]);
+}
 
 int main(int argc, char *argv[]) {
   
@@ -69,26 +74,18 @@ int main(int argc, char *argv[]) {
   socklen_t lg = sizeof(struct sockaddr_in) ;
   
   pthread_t thread[MAX_CLIENTS]; 
-  int desc[MAX_CLIENTS];
-  long cpt=0;
-
-  while (1 && i<=MAX_CLIENTS) {
+  
+  int cpt=0;
+  
+  int t=pthread_create(&thread[0], NULL,(void *)communiquerWithCli,NULL); 
+  
+  while (cpt<=MAX_CLIENTS) {
     // Connexion Client 
     int dSC = accept(dS, (struct sockaddr*) &aC,&lg) ;
-    printf("Client Connecté\n");
-    desc[cpt]=dSC;
-
-    para p;
-    p.dSC=&dSC;
-    for(int l=0;l<=cpt;l++)
-      p.desc[l]=&desc[l];
-      
-    int t;
-    t=pthread_create(&thread[i], NULL,(void *)communiquerWithCli,&p); 
-
-    
+    printf("Client %d Connecté\n", dSC);
+    metAjourTableau(dSC);
     cpt++;
-    printf("i = %ld \n",i);
+    printf("i = %d \n",cpt);
   }
   
 

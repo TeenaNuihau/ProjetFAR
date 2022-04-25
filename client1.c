@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #define MAX_LENGTH 100
-#define PORT 3002
+#define PORT 3001
 
 
 void recevoir(int* s){
