@@ -1,0 +1,49 @@
+  //int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
+  while(1){
+    printf("Nombre de clients : %ld\n" ,i);
+    if(i>0){
+      printf("Je tente de communiquer\n");
+      while(1){
+        printf("Je boucle\n");
+        char msg [MAX_LENGTH] ;
+        for (int k=0;k<=i;k++) {
+          printf("desc[%d] = %d \n",k, desc[k]);
+          if (recv(desc[k], msg, MAX_LENGTH, 0)!=-1) {
+            printf("Premier Message reçu : %s \n", msg) ;
+            for(int j=0;j<=i;j++){
+              if(desc[k]!=desc[j]){
+                printf("Je parle avec le client %d\n",j);
+                send(desc[j], msg, MAX_LENGTH,0);
+              }
+            }
+          printf("Message Envoyé\n");
+          }
+          printf("k = %d \n", k);
+        }
+      }
+      i--;
+      shutdown(desc[i],2); // MAX_CLIENTS
+    }
+  }
+}
+
+
+
+
+
+int sem_init(sem_t *sem, int pshared, unsigned int value);
+int sem_destroy(sem_t *sem);
+int sem_wait(sem_t *sem);
+int sem_post(sem_t *sem);
+
+
+// Pseudo Client
+char* pseudo = (char *) malloc(MAX_LENGTH);
+recv(dSC, pseudo, MAX_LENGTH, 0) ;
+printf("Pseudo reçu : %s\n",pseudo) ;
+
+    // envoi du pseudo
+char* m = (char *) malloc(MAX_LENGTH);
+printf("Entrez votre pseudo : \n");
+fgets( m, MAX_LENGTH, stdin ); 
+send(dS, m, MAX_LENGTH , 0);

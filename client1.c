@@ -9,23 +9,29 @@
 #define MAX_LENGTH 100
 #define PORT 3001
 
+char pseudo[100];
+
+
 
 void recevoir(int* s){
   char* m = (char *) malloc(MAX_LENGTH);
   while(1){
     recv(*s, m, MAX_LENGTH, 0) ;
-    printf("Message reçu : %s\n",m) ;
+    printf("%s",m) ;
     //free( m );
   }
   shutdown(*s,2) ;
 }
 
 void envoyer(int* s){
+  
   char* m = (char *) malloc(MAX_LENGTH);
   while(1){
-    printf("Entrez le premier message : \n");
+    char* p = strcat(pseudo, " : ");
+    //printf("%s : \n",pseudo);
     fgets( m, MAX_LENGTH, stdin ); 
-    send(*s, m, MAX_LENGTH , 0);
+    //char* message = strcat(p,m);
+    send(*s,strcat(p,m), MAX_LENGTH , 0);
     //free( m );
   }
   shutdown(*s,2) ;
@@ -46,6 +52,10 @@ int main(int argc, char *argv[]) {
   socklen_t lgA = sizeof(struct sockaddr_in) ;
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
+
+  printf("Entrez votre pseudo : ");
+  fgets(pseudo, 100, stdin);
+
 
   pthread_t thread[2];
   int tReception;

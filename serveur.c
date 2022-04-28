@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <semaphore.h>
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
@@ -13,43 +14,41 @@
 
 int desc[MAX_CLIENTS];
 
+
 long i=-1;
+sem_t semaphore;
 
 
 void communiquerWithCli(){
-  //int nbcli=(int)( sizeof(*(p->desc)) / sizeof(*(p->desc[0]))); 
+  //i++;
+  int socket=i;
+  printf("Com avec cli %d\n",socket);
+  char msg [MAX_LENGTH] ;
   while(1){
-    printf("Nombre de clients : %ld\n" ,i);
-    if(i>0){
-      printf("Je tente de communiquer\n");
-      while(1){
-        printf("Je boucle\n");
-        char msg [MAX_LENGTH] ;
-        for (int k=0;k<=i;k++) {
-          printf("desc[%d] = %d \n",k, desc[k]);
-          if (recv(desc[k], msg, MAX_LENGTH, 0)!=-1) {
-            printf("Premier Message reçu : %s \n", msg) ;
-            for(int j=0;j<=i;j++){
-              if(desc[k]!=desc[j]){
-                printf("Je parle avec le client %d\n",j);
-                send(desc[j], msg, MAX_LENGTH,0);
-              }
-            }
-          printf("Message Envoyé\n");
-          }
-          printf("k = %d \n", k);
+    if (recv(desc[socket], msg, MAX_LENGTH, 0)!=-1) {
+      printf("%s",msg) ;
+      for(int j=0;j<=i;j++){
+        if(desc[socket]!=desc[j]){
+          printf("Je parle avec le client %d\n",j);
+          send(desc[j], msg, MAX_LENGTH,0);
         }
       }
-      i--;
-      shutdown(desc[i],2); // MAX_CLIENTS
     }
   }
+  i--;
+  shutdown(desc[socket],2); // MAX_CLIENTS
 }
 
+  
+
+
 void metAjourTableau(int socket){
+  sem_wait(&semaphore);
   i++;
   desc[i]=socket;
   printf("Je met à jour : %d \n",desc[i]);
+  sem_post(&semaphore);
+  printf("Je LIBERE : %ld \n",i);
 }
 
 int main(int argc, char *argv[]) {
@@ -75,17 +74,21 @@ int main(int argc, char *argv[]) {
   
   pthread_t thread[MAX_CLIENTS]; 
   
-  int cpt=0;
+  //int cpt=0;   
+  sem_init(&semaphore, 0, 1);
   
-  int t=pthread_create(&thread[0], NULL,(void *)communiquerWithCli,NULL); 
-  
-  while (cpt<=MAX_CLIENTS) {
+  while (i<=MAX_CLIENTS) {
     // Connexion Client 
     int dSC = accept(dS, (struct sockaddr*) &aC,&lg) ;
     printf("Client %d Connecté\n", dSC);
+
+
+    // Ajout du client
     metAjourTableau(dSC);
-    cpt++;
-    printf("i = %d \n",cpt);
+
+    // Communication entre clients
+    int t=pthread_create(&thread[0], NULL,(void *)communiquerWithCli,NULL);
+    printf("i = %ld \n",i);
   }
   
 
