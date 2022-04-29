@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #define MAX_LENGTH 100
-#define PORT 3001
+#define PORT 3000
 
 char pseudo[100];
 
@@ -27,11 +27,10 @@ void envoyer(int* s){
   
   char* m = (char *) malloc(MAX_LENGTH);
   while(1){
-    char* p = strcat(pseudo, " : ");
     //printf("%s : \n",pseudo);
     fgets( m, MAX_LENGTH, stdin ); 
     //char* message = strcat(p,m);
-    send(*s,strcat(p,m), MAX_LENGTH , 0);
+    send(*s,m, MAX_LENGTH , 0);
     //free( m );
   }
   shutdown(*s,2) ;
@@ -53,8 +52,10 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
+  char* pseudo = (char *) malloc(MAX_LENGTH);
   printf("Entrez votre pseudo : ");
   fgets(pseudo, 100, stdin);
+  send(dS, pseudo, MAX_LENGTH, 0);
 
 
   pthread_t thread[2];

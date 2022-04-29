@@ -1,40 +1,13 @@
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <search.h>
+#include <stdio.h>
 
-static char *companies[] = { "Intel", "AMD", "ARM", "Apple",
-                            "Marvell", "Qualcomm", "IBM", "Nvidia" };
 
-static char *uarch[] = { "Willow Cove", "Zen 3", "A78", "A14",
-                            "ThunderX2", "Kryo", "z15", "Ampere" };
+void main (int argc, char* argv[]) {
 
-int main(void) {
-   ENTRY e;
-   ENTRY *ep;
+    char* pseudoR = "mat\n";
 
-   const size_t capacity = sizeof companies / sizeof companies[0];
-   hcreate(capacity);
-
-   for (size_t i = 0; i < capacity - 2; i++) {
-       e.key = companies[i];
-       e.data = (void *) uarch[i];
-
-       ep = hsearch(e, ENTER);
-
-       if (ep == NULL) {
-           fprintf(stderr, "entry failed\n");
-           exit(EXIT_FAILURE);
-       }
-   }
-
-   for (size_t i = 0; i < capacity; i++) {
-       e.key = companies[i];
-       ep = hsearch(e, FIND);
-
-       ep ? printf("%s -> %s\n", e.key, (char*)ep->data) :
-           printf("%s -> %s\n", e.key, "Entry not found");
-   }
-
-   hdestroy();
-   exit(EXIT_SUCCESS);
+    char pseudo[strlen(pseudoR)-1];
+    strncpy(pseudo,&pseudoR[0],strlen(pseudoR)-1);
+    printf("Pseudo reçu : %s \n", pseudo);
 }
