@@ -12,17 +12,17 @@
 #define MAX_CLIENTS 50
 #define PORT 3000
 
-// int desc[MAX_CLIENTS];
-// char* pseudos[MAX_CLIENTS];
+int desc[MAX_CLIENTS];
+char pseudos[MAX_CLIENTS][MAX_LENGTH];
 
-
-
+/*
 typedef struct {
   int desc;
   char* pseudo;
 } client ;
 
 client* clients[MAX_CLIENTS];
+*/
 
 long i=-1;
 sem_t semaphore;
@@ -31,36 +31,41 @@ sem_t semaphore;
 void communiquerWithCli(){
   //i++;
   int socket=i;
+  printf("Pseudo enregistré : %s , socket : %d\n", pseudos[0], desc[socket]);
   printf("Com avec cli %d\n",socket);
   char msg [MAX_LENGTH] ;
   while(1){
-    if (recv(clients[socket]->desc, msg, MAX_LENGTH, 0)!=-1) {
-      
-      char* msg_final = "";
-      strcat(msg_final,clients[socket]->pseudo);
-      printf("message final reçu : %s",msg_final) ;
+    if (recv(desc[socket], msg, MAX_LENGTH, 0)!=-1) {
+      printf("Msg reçu de %s : %s", pseudos[socket], msg);
+
+      char* msg_final = (char *) malloc(MAX_LENGTH);
+      strcat(msg_final,pseudos[socket]);
       strcat(msg_final, " : ");
       strcat(msg_final, msg);
       printf("message final reçu : %s",msg_final) ;
+      
       for(int j=0;j<=i;j++){
-        if(clients[socket]->desc!=clients[j]->desc){
-          send(clients[j]->desc, msg_final, MAX_LENGTH,0);
+        if(desc[socket]!=desc[j]){
+          send(desc[j], msg_final, MAX_LENGTH,0);
         }
       }
     }
   }
   i--;
-  shutdown(clients[socket]->desc,2); // MAX_CLIENTS
+  shutdown(desc[socket],2); // MAX_CLIENTS
 }
 
   
 
 
-void metAjourTableau(client* c){
+void metAjourTableau(int dSC, char* pseudo){
   sem_wait(&semaphore);
   i++;
-  clients[i] = c;
+  // clients[i] = c;
+  desc[i] = dSC;
+  strncpy(pseudos[i],pseudo,MAX_LENGTH);
   sem_post(&semaphore);
+  
 }
 
 int main(int argc, char *argv[]) {
@@ -102,12 +107,17 @@ int main(int argc, char *argv[]) {
     pseudo[taille]='\0';
     printf("Client %d Connecté sous le pseudo %s\n", dSC, pseudo);
 
+    /*
     client c;
     c.desc = dSC;
     c.pseudo = pseudo;
+    */
 
     // Ajout du client
-    metAjourTableau(&c);
+    metAjourTableau(dSC, pseudo);
+    for(int j=0;j<=i;j++){
+    printf("Pseudos %d enregistré : %s \n",desc[j], pseudos[j]);
+  } 
 
     // Communication entre clients
     int t=pthread_create(&thread[0], NULL,(void *)communiquerWithCli,NULL);
