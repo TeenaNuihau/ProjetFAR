@@ -17,7 +17,7 @@ void recevoir(int* s){
   char* m = (char *) malloc(MAX_LENGTH);
   while(1){
     recv(*s, m, MAX_LENGTH, 0) ;
-    printf("%s",m) ;
+    printf("\n%s",m) ;
     //free( m );
   }
   shutdown(*s,2) ;
@@ -28,6 +28,7 @@ void envoyer(int* s){
   char* m = (char *) malloc(MAX_LENGTH);
   while(1){
     //printf("%s : \n",pseudo);
+    printf("\nvous : ");
     fgets( m, MAX_LENGTH, stdin ); 
     //char* message = strcat(p,m);
     send(*s,m, MAX_LENGTH , 0);
@@ -52,7 +53,7 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA) ;
   printf("Socket Connecté\n");
 
-  char* pseudo = (char *) malloc(MAX_LENGTH);
+  
   printf("Entrez votre pseudo : ");
   fgets(pseudo, 100, stdin);
   send(dS, pseudo, MAX_LENGTH, 0);
