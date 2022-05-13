@@ -10,7 +10,7 @@
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
-#define PORT 3000
+#define PORT 3001
 
 int desc[MAX_CLIENTS];
 char pseudos[MAX_CLIENTS][MAX_LENGTH];
@@ -27,6 +27,25 @@ client* clients[MAX_CLIENTS];
 long i=-1;
 sem_t semaphore;
 
+int trouverPseudo(char* pseudo){
+  for(int i=0;i<MAX_CLIENTS;i++)
+    if(strcmp(pseudos[i],pseudo)==0)
+      return i;
+}
+
+void redirection(char* msg, int socket){
+  char* mp = strstr(msg, "/mp");
+  if(mp){
+    char* d=" ";
+    char* p = strtok(msg,d);
+    p=strtok(NULL,d);
+    int index= trouverPseudo(p);
+    char* mess=strstr(msg,p);
+    send(desc[index],mess,MAX_LENGTH,0);
+    printf("message pour % s : %s\n",p,mess);
+  }
+}
+
 
 void communiquerWithCli(){
   //i++;
@@ -37,26 +56,26 @@ void communiquerWithCli(){
   while(1){
     if (recv(desc[socket], msg, MAX_LENGTH, 0)!=-1) {
       printf("Msg reçu de %s : %s", pseudos[socket], msg);
-
-      char* msg_final = (char *) malloc(MAX_LENGTH);
-      strcat(msg_final,pseudos[socket]);
-      strcat(msg_final, " : ");
-      strcat(msg_final, msg);
-      printf("message final reçu : %s",msg_final) ;
-      
-      for(int j=0;j<=i;j++){
-        if(desc[socket]!=desc[j]){
-          send(desc[j], msg_final, MAX_LENGTH,0);
+      if(msg[0]!='/'){
+        char* msg_final = (char *) malloc(MAX_LENGTH);
+        strcat(msg_final,pseudos[socket]);
+        strcat(msg_final, " : ");
+        strcat(msg_final, msg);
+        
+        for(int j=0;j<=i;j++){
+          if(desc[socket]!=desc[j]){
+            send(desc[j], msg_final, MAX_LENGTH,0);
+          }
         }
+      }
+      else{
+        redirection(msg,socket);
       }
     }
   }
   i--;
   shutdown(desc[socket],2); // MAX_CLIENTS
 }
-
-  
-
 
 void metAjourTableau(int dSC, char* pseudo){
   sem_wait(&semaphore);

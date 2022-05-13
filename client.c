@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #define MAX_LENGTH 100
-#define PORT 3000
+#define PORT 3001
 
 char pseudo[100];
 
