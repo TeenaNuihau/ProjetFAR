@@ -7,10 +7,11 @@
 #include <pthread.h>
 #include <time.h>
 #include <semaphore.h>
+#include <regex.h>
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
-#define PORT 3001
+#define PORT 3000
 
 int desc[MAX_CLIENTS];
 char pseudos[MAX_CLIENTS][MAX_LENGTH];
@@ -33,17 +34,83 @@ int trouverPseudo(char* pseudo){
       return i;
 }
 
-void redirection(char* msg, int socket){
-  char* mp = strstr(msg, "/mp");
-  if(mp){
-    char* d=" ";
-    char* p = strtok(msg,d);
-    p=strtok(NULL,d);
-    int index= trouverPseudo(p);
-    char* mess=strstr(msg,p);
-    send(desc[index],mess,MAX_LENGTH,0);
-    printf("message pour % s : %s\n",p,mess);
+void privateMessage(char* msg, int socket) {
+  char delim[] = " ";
+  char *p = strtok(msg, delim);
+  p = strtok(NULL, delim);
+  char* desti = p;
+  
+  char* msg_final = (char *) malloc(MAX_LENGTH);
+  strcat(msg_final, "(privé) ");
+  strcat(msg_final,pseudos[socket]);
+  strcat(msg_final, " : ");
+  p = strtok(NULL, delim);
+
+  while ( p != NULL ) {
+    strcat(msg_final, " ");
+    strcat(msg_final, p);
+    p = strtok(NULL, delim);
   }
+  
+  int index = trouverPseudo(desti);
+  send(desc[index],msg_final,MAX_LENGTH,0);
+  free(msg_final);
+}
+
+void commandManual(int socket) {
+  char* msg_final = "/man : display the commands list \n/mp username msg : send private message \n/dc : disconnect \n";
+  send(desc[socket], msg_final, MAX_LENGTH, 0);  
+}
+
+// TODO
+// void disconnectClient(int socket) {
+
+// }
+
+void redirection(char* msg, int socket){
+
+  int mp;
+  int man;
+  regex_t preg;
+  const char *mp_regex = "^/mp";
+  const char *man_regex = "^/man";
+  const char *dc_regex = "^/dc";
+
+  // Commande mp
+  mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+  if (mp == 0) {
+    int match;
+    match = regexec (&preg, msg, 0, NULL, 0);
+    regfree (&preg);
+
+    if (match == 0) {
+      privateMessage(msg, socket);
+    }
+  }
+
+  // Commande man
+  man = regcomp (&preg, man_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+  if (mp == 0) {
+    int match;
+    match = regexec (&preg, msg, 0, NULL, 0);
+    regfree (&preg);
+
+    if (match == 0) {
+      commandManual(socket);
+    }
+  }
+
+  // TODO: Commande dc
+  // dc = regcomp (&preg, dc_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+  // if (mp == 0) {
+  //   int match;
+  //   match = regexec (&preg, msg, 0, NULL, 0);
+  //   regfree (&preg);
+
+  //   if (match == 0) {
+  //     disconnectClient(socket);
+  //   }
+  // }
 }
 
 
