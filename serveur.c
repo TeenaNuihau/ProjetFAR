@@ -71,10 +71,12 @@ void redirection(char* msg, int socket){
 
   int mp;
   int man;
+  int list;
   regex_t preg;
   const char *mp_regex = "^/mp";
   const char *man_regex = "^/man";
   const char *dc_regex = "^/dc";
+  const char *list_regex = "^/list"
 
   // Commande mp
   mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
@@ -111,6 +113,25 @@ void redirection(char* msg, int socket){
   //     disconnectClient(socket);
   //   }
   // }
+
+  // Commande list
+    list = regcomp (&preg, list_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if(list == 0){
+      int match;
+      match = regexec (&preg, msg, 0, NULL, 0);
+      regfree (&preg);
+
+      if(match == 0){
+        char* msg_final = "/list : display the list of connected users \n";
+        for(int i=0;i<MAX_CLIENTS;i++){
+            if(strcmp(pseudos[i],"")!=0){
+                strcat(msg_final,pseudos[i]);
+                strcat(msg_final," \n ");
+            }
+        }
+        send(desc[socket], msg_final, MAX_LENGTH, 0);
+      }
+    }
 }
 
 
