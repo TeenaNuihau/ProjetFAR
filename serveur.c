@@ -11,7 +11,7 @@
 
 #define MAX_LENGTH 100
 #define MAX_CLIENTS 50
-#define PORT 3000
+#define PORT 3001
 
 int desc[MAX_CLIENTS];
 char pseudos[MAX_CLIENTS][MAX_LENGTH];
@@ -62,21 +62,37 @@ void commandManual(int socket) {
   send(desc[socket], msg_final, MAX_LENGTH, 0);  
 }
 
-// TODO
-// void disconnectClient(int socket) {
 
-// }
+void disconnectClient(int socket) {
+    shutdown(desc[socket], 2);
+    desc[socket] = NULL;
+    pseudos[socket] = NULL;
+}
+
+void envoyerListClients(int socket){
+    char* msg_final = (char *) malloc(MAX_LENGTH*MAX_CLIENTS+200);
+    strcat(msg_final,"Liste des clients : \n");
+    for(int i=0;i<MAX_CLIENTS;i++)
+        if(desc[i]!=NULL){
+            strcat(msg_final,pseudos[i]);
+            strcat(msg_final," \n");
+        }
+    send(desc[socket],msg_final,MAX_LENGTH,0);
+    free(msg_final);
+}
+
 
 void redirection(char* msg, int socket){
 
   int mp;
   int man;
   int list;
+  int dc;
   regex_t preg;
   const char *mp_regex = "^/mp";
   const char *man_regex = "^/man";
   const char *dc_regex = "^/dc";
-  const char *list_regex = "^/list"
+  const char *list_regex = "^/list";
 
   // Commande mp
   mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
@@ -92,7 +108,7 @@ void redirection(char* msg, int socket){
 
   // Commande man
   man = regcomp (&preg, man_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-  if (mp == 0) {
+  if (man == 0) {
     int match;
     match = regexec (&preg, msg, 0, NULL, 0);
     regfree (&preg);
@@ -102,17 +118,17 @@ void redirection(char* msg, int socket){
     }
   }
 
-  // TODO: Commande dc
-  // dc = regcomp (&preg, dc_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-  // if (mp == 0) {
-  //   int match;
-  //   match = regexec (&preg, msg, 0, NULL, 0);
-  //   regfree (&preg);
+    // Commande dc
+    dc = regcomp (&preg, dc_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (dc == 0) {
+      int match;
+      match = regexec (&preg, msg, 0, NULL, 0);
+      regfree (&preg);
 
-  //   if (match == 0) {
-  //     disconnectClient(socket);
-  //   }
-  // }
+      if (match == 0) {
+        disconnectClient(socket);
+      }
+    }
 
   // Commande list
     list = regcomp (&preg, list_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
@@ -122,26 +138,18 @@ void redirection(char* msg, int socket){
       regfree (&preg);
 
       if(match == 0){
-        char* msg_final = "/list : display the list of connected users \n";
-        for(int i=0;i<MAX_CLIENTS;i++){
-            if(strcmp(pseudos[i],"")!=0){
-                strcat(msg_final,pseudos[i]);
-                strcat(msg_final," \n ");
-            }
-        }
-        send(desc[socket], msg_final, MAX_LENGTH, 0);
+        envoyerListClients(socket);
       }
     }
 }
 
 
 void communiquerWithCli(){
-  //i++;
   int socket=i;
   printf("Pseudo enregistré : %s , socket : %d\n", pseudos[0], desc[socket]);
   printf("Com avec cli %d\n",socket);
   char msg [MAX_LENGTH] ;
-  while(1){
+  while(desc[socket]!=NULL){
     if (recv(desc[socket], msg, MAX_LENGTH, 0)!=-1) {
       printf("Msg reçu de %s : %s", pseudos[socket], msg);
       if(msg[0]!='/'){
@@ -151,18 +159,21 @@ void communiquerWithCli(){
         strcat(msg_final, msg);
         
         for(int j=0;j<=i;j++){
-          if(desc[socket]!=desc[j]){
-            send(desc[j], msg_final, MAX_LENGTH,0);
-          }
+            if(desc[j]!=NULL){
+              if(desc[socket]!=desc[j]){
+                  send(desc[j], msg_final, MAX_LENGTH,0);
+              }
+            }
         }
+
       }
       else{
         redirection(msg,socket);
       }
     }
   }
-  i--;
   shutdown(desc[socket],2); // MAX_CLIENTS
+  desc[socket] = NULL;
 }
 
 void metAjourTableau(int dSC, char* pseudo){
