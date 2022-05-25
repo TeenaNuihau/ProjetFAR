@@ -15,7 +15,7 @@
 #include "list.h"
 
 
-#define PORT 3004 //Port of the server
+#define PORT 3001 //Port of the server
 
 
 Liste *listeClient;

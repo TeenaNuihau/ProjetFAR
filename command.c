@@ -8,12 +8,12 @@
 #include "list.h"
 
 // send private message
-void privateMessage(char* msg, int socket) {
+void privateMessage(char* msg, int socket, Liste *liste) {
     char delim[] = " ";
     char *p = strtok(msg, delim);
     p = strtok(NULL, delim);
     char* p_desti = p;
-    int dSC_desti = rechercherElementPseudo(listeClient, p)->dSC;
+    int dSC_desti = rechercherElementPseudo(liste, p)->dSC;
 
     char* msg_final = (char *) malloc(MAX_LENGTH);
     strcat(msg_final, "(privé) ");
@@ -52,11 +52,11 @@ void envoyerListClients(int socket, Liste *liste) {
         strcat(msg_final," \n");
     }
 
-    send(desc[socket],msg_final,MAX_LENGTH,0);
+    send(socket,msg_final,MAX_LENGTH,0);
     free(msg_final);
 }
 
-void redirection(char* msg, int socket) {
+void redirection(char* msg, int socket, Liste *liste) {
     int mp;
     int man;
     int list;
@@ -75,7 +75,7 @@ void redirection(char* msg, int socket) {
         regfree (&preg);
 
         if (match == 0) {
-            privateMessage(msg, socket);
+            privateMessage(msg, socket, liste);
         }
     }
 
@@ -99,7 +99,7 @@ void redirection(char* msg, int socket) {
         regfree (&preg);
 
         if (match == 0) {
-            disconnectClient(socket);
+            disconnectClient(socket, liste);
         }
     }
 
@@ -111,7 +111,7 @@ void redirection(char* msg, int socket) {
         regfree (&preg);
 
         if(match == 0){
-            envoyerListClients(socket);
+            envoyerListClients(socket; liste);
         }
     }
 }

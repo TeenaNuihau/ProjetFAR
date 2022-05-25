@@ -5,12 +5,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #define MAX_LENGTH 100
-#define PORT 3004
+#define PORT 3001
 
 char pseudo[100];
-
 
 
 void recevoir(int* s){
@@ -62,11 +62,15 @@ int main(int argc, char *argv[]) {
   pthread_t thread[2];
   int tReception;
   int tEnvoi;
-  tEnvoi=pthread_create(&thread[1], NULL,(void *)envoyer,&dS); 
-  tReception=pthread_create(&thread[0], NULL,(void *)recevoir,&dS); 
-  
+
+
+  tEnvoi=pthread_create(&thread[1], NULL,(void *)envoyer,&dS);
+  tReception=pthread_create(&thread[0], NULL,(void *)recevoir,&dS);
+
   pthread_join(thread[0], NULL);
   pthread_join(thread[1], NULL);
-  printf("J'ai commencé l'émission / reception \n");
+
+
+  printf("J'ai fini \n");
 
 }
