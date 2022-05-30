@@ -51,4 +51,6 @@ void envoyerListClients(int socket, Liste *liste);
 
 void envoyerListCanaux(int socket);
 
+void recv_file(int socket, char* msg);
+
 void redirection(char* msg, int socket, Liste *liste);

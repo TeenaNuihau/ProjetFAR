@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#define SIZE 1024
+
 
 void ajouterEnTete(Liste *liste, int nvdSC, char* nvPseudo)
 {
@@ -180,16 +182,37 @@ void envoyerListClients(int socket, Liste *liste) {
     send(socket,msg_final,MAX_LENGTH,0);
 }
 
+void write_file(int sockfd){
+    int n;
+    FILE *fp;
+    char *filename = "recv.txt";
+    char buffer[SIZE];
+
+    fp = fopen(filename, "w");
+    while (1) {
+        n = recv(sockfd, buffer, SIZE, 0);
+        if (n <= 0){
+            break;
+            return;
+        }
+        fprintf(fp, "%s", buffer);
+        bzero(buffer, SIZE);
+    }
+    return;
+}
+
 void redirection(char* msg, int socket, Liste *liste) {
     int mp;
     int man;
     int list;
     int dc;
+    int file;
     regex_t preg;
     const char *mp_regex = "^/mp";
     const char *man_regex = "^/man";
     const char *dc_regex = "^/dc";
     const char *list_regex = "^/list";
+    const char *file_regex = "^/file";
 
     // Commande mp
     mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
@@ -236,6 +259,18 @@ void redirection(char* msg, int socket, Liste *liste) {
 
         if(match == 0){
             envoyerListClients(socket, liste);
+        }
+    }
+
+    // Commande file
+    file = regcomp (&preg, file_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if(file == 0){
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if(match == 0){
+            write_file(socket);
         }
     }
 }

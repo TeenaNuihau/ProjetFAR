@@ -16,6 +16,7 @@
 
 
 #define PORT 3001 //Port of the server
+#define SIZE 1024
 
 
 Liste *listeClient;

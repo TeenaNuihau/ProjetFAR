@@ -6,12 +6,51 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <regex.h>
 
 #define MAX_LENGTH 100
 #define PORT 3001
+#define SIZE 1024
 
 char pseudo[100];
 
+
+void send_file(FILE *fp, int sockfd){
+    int n;
+    char data[SIZE] = {0};
+
+    while(fgets(data, SIZE, fp) != NULL) {
+        bzero(data, SIZE);
+    }
+}
+
+int file_command(char* msg){
+    int file;
+    regex_t preg;
+    const char *file_regex = "^/file";
+    // Commande file
+    file = regcomp (&preg, file_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    int match = 1;
+    if(file == 0){
+
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+    }
+    return match;
+}
+
+
+void sendFile_command(int* sockfd, char* filename) {
+    FILE* fp = fopen("msg_test.txt", "rb");
+    if (fp == NULL) {
+        printf("[-]Error in reading file.");
+        return;
+    }
+    printf("ici\n");
+    send_file(fp, *sockfd);
+    printf("[+]File data sent successfully.\n");
+}
 
 void recevoir(int* s){
   char* m = (char *) malloc(MAX_LENGTH);
@@ -29,7 +68,15 @@ void envoyer(int* s){
   while(1){
     //printf("%s : \n",pseudo);
     printf("\nvous : ");
-    fgets( m, MAX_LENGTH, stdin ); 
+    fgets( m, MAX_LENGTH, stdin );
+    if (file_command(m)==0) {
+        char delim[] = " ";
+        char *p = strtok(m, delim);
+        p = strtok(NULL, delim);
+        char* filename = p;
+        printf("filename = %s\n",p);
+        sendFile_command(s,filename);
+    }
     //char* message = strcat(p,m);
     send(*s,m, MAX_LENGTH , 0);
     //free( m );
