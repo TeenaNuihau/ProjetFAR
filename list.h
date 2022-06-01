@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_LENGTH 100
+#define MAX_LENGTH 1000
 #define MAX_CLIENTS 50
+#define SIZE 1024
 
 typedef struct element element;
 struct element

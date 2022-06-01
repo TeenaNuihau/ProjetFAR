@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
-
+#include <pthread.h>
 #include "list.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -30,9 +30,9 @@ void ajouterEnTete(Liste *liste, int nvdSC, char* nvPseudo)
 
 void afficherListe(Liste *liste)
 {
+    printf("Afficher list : \n");
     element *tmp = liste->head;
     /* Tant que l'on n'est pas au bout de la liste */
-    printf("Afficher list : \n");
     while(tmp != NULL)
     {
         /* On affiche */
@@ -76,7 +76,7 @@ element* rechercherElementPseudo(Liste *liste, char* pseudo){
     /* Tant que l'on n'est pas au bout de la liste */
     while(tmp != NULL)
     {
-        if(tmp->pseudo == pseudo)
+        if(strcmp(tmp->pseudo,pseudo) == 0)
         {
             /* Si l'élément a la valeur recherchée, on renvoie son adresse */
             return tmp;
@@ -90,10 +90,9 @@ void supprimerElement(Liste *liste, int valeur){
     element *tmp = liste->head;
     element *prec = NULL;
     /* Tant que l'on n'est pas au bout de la liste */
-    while(tmp != NULL)
-    {
-        if(tmp->dSC == valeur)
-        {
+    while(tmp != NULL){
+        if(tmp->dSC == valeur){
+            printf("Client : %s déconnecté",tmp->pseudo);
             tmp->isConnected = 0;
             /* Si l'élément a la valeur recherchée, on supprime l'élément */
             if(prec == NULL)
@@ -137,22 +136,34 @@ void privateMessage(char* msg, int socket, Liste *liste) {
     char *p = strtok(msg, delim);
     p = strtok(NULL, delim);
     char* p_desti = p;
-    int dSC_desti = rechercherElementPseudo(liste, p)->dSC;
+    struct element* desti = rechercherElementPseudo(liste, p);
+    int dSC_desti;
 
-    char* msg_final = (char *) malloc(MAX_LENGTH);
-    strcat(msg_final, "(privé) ");
-    strcat(msg_final, p_desti);
-    strcat(msg_final, " : ");
-    p = strtok(NULL, delim);
+    char* pseudoEmeteur = rechercherElementSocket(liste, socket)->pseudo;
 
-    while ( p != NULL ) {
-        strcat(msg_final, " ");
-        strcat(msg_final, p);
+    if(desti != NULL) {
+        dSC_desti = desti->dSC;
+        char *msg_final = (char *) malloc(MAX_LENGTH);
+        strcat(msg_final, "(privé) ");
+        strcat(msg_final, pseudoEmeteur);
+        strcat(msg_final, " : ");
         p = strtok(NULL, delim);
-    }
 
-    send(dSC_desti,msg_final,MAX_LENGTH,0);
-    free(msg_final);
+        while (p != NULL) {
+            strcat(msg_final, " ");
+            strcat(msg_final, p);
+            p = strtok(NULL, delim);
+        }
+
+        send(dSC_desti, msg_final, MAX_LENGTH, 0);
+        free(msg_final);
+    } else {
+        printf("Pseudo inconnu : %s\n", p_desti);
+        char *msg_final = (char *) malloc(MAX_LENGTH);
+        strcat(msg_final, "Pseudo inconnu");
+        send(socket, msg_final, MAX_LENGTH, 0);
+        free(msg_final);
+    }
 }
 
 // display the commands list
@@ -180,65 +191,6 @@ void envoyerListClients(int socket, Liste *liste) {
     send(socket,msg_final,MAX_LENGTH,0);
 }
 
-void redirection(char* msg, int socket, Liste *liste) {
-    int mp;
-    int man;
-    int list;
-    int dc;
-    regex_t preg;
-    const char *mp_regex = "^/mp";
-    const char *man_regex = "^/man";
-    const char *dc_regex = "^/dc";
-    const char *list_regex = "^/list";
-
-    // Commande mp
-    mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-    if (mp == 0) {
-        int match;
-        match = regexec (&preg, msg, 0, NULL, 0);
-        regfree (&preg);
-
-        if (match == 0) {
-            privateMessage(msg, socket, liste);
-        }
-    }
-
-    // Commande man
-    man = regcomp (&preg, man_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-    if (man == 0) {
-        int match;
-        match = regexec (&preg, msg, 0, NULL, 0);
-        regfree (&preg);
-
-        if (match == 0) {
-            commandManual(socket);
-        }
-    }
-
-    // Commande dc
-    dc = regcomp (&preg, dc_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-    if (dc == 0) {
-        int match;
-        match = regexec (&preg, msg, 0, NULL, 0);
-        regfree (&preg);
-
-        if (match == 0) {
-            disconnectClient(socket, liste);
-        }
-    }
-
-    // Commande list
-    list = regcomp (&preg, list_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-    if(list == 0){
-        int match;
-        match = regexec (&preg, msg, 0, NULL, 0);
-        regfree (&preg);
-
-        if(match == 0){
-            envoyerListClients(socket, liste);
-        }
-    }
-}
 
 
 /*void envoyerListCanaux(int socket) {
