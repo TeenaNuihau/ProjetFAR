@@ -18,7 +18,7 @@ void ajouterEnTete(Liste *liste, int nvdSC, char* nvPseudo)
 
     strcpy(nouvelElement->pseudo, nvPseudo);
     nouvelElement->isConnected = 1;
-    // nouvelElement->canal = "général";
+    nouvelElement->canal = 0; // canal général
  
     /* On assigne l'adresse de l'élément suivant au nouvel élément */
     nouvelElement->nxt = liste->head;
@@ -111,8 +111,8 @@ void supprimerElement(Liste *liste, int valeur){
         tmp = tmp->nxt;
     }
 }
-/*
-void changerCanal(Liste *liste, int socket, char* nvCanal) {
+
+void changerCanal(Liste *liste, int socket, int nvCanal) {
     element* tmp = liste->head;
     while (tmp != NULL) {
         if (tmp->dSC!=socket) {
@@ -120,7 +120,7 @@ void changerCanal(Liste *liste, int socket, char* nvCanal) {
         }
     }
 }
-*/
+
 Liste* creerListe()
 {
     Liste *liste = (Liste*)malloc(sizeof(Liste));
@@ -168,7 +168,7 @@ void privateMessage(char* msg, int socket, Liste *liste) {
 
 // display the commands list
 void commandManual(int socket) {
-    char* msg_final = "/man : display the commands list \n/mp username msg : send private message \n/list : display the list of connected client(s) \n/dc : disconnect \n";
+    char* msg_final = "/man : display the commands list \n/mp <username> msg : send private message \n/list : display the list of connected client(s) \n/dc : disconnect \n/file <fileNumber> : send file\n/dllist : display all the downloadable files\n";
     send(socket, msg_final, MAX_LENGTH, 0);
 }
 
@@ -193,7 +193,11 @@ void envoyerListClients(int socket, Liste *liste) {
 
 
 
-/*void envoyerListCanaux(int socket) {
+/*
+ * void creerCanal() {
+ * }
+ *
+ * void envoyerListCanaux(int socket) {
 
-}
+*}
 */

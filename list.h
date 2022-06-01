@@ -11,7 +11,7 @@ struct element
 {
     int dSC;
     char pseudo[MAX_LENGTH];
-    // char* canal;
+    int canal;
     int isConnected;
     struct element *nxt;
 };
@@ -34,7 +34,7 @@ element* rechercherElementPseudo(Liste *liste, char* pseudo);
 
 void supprimerElement(Liste *liste, int valeur);
 
-// void changerCanal(Liste *liste, int socket, char* nvCanal);
+void changerCanal(Liste *liste, int socket, int nvCanal);
 
 Liste* creerListe();
 
@@ -50,6 +50,9 @@ void disconnectClient(int socket, Liste *liste);
 
 void envoyerListClients(int socket, Liste *liste);
 
-void envoyerListCanaux(int socket);
+// void envoyerListCanaux(int socket);
 
-void redirection(char* msg, int socket, Liste *liste);
+void creerCanal();
+
+
+

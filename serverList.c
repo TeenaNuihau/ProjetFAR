@@ -37,10 +37,11 @@ void supprimerClient(int socket){
     sem_post(&semaphore);
 }
 
-void envoyerMessageGeneral(char* msg, int from){
+void envoyerMessage(char* msg, int from){
+    element* expedi = rechercherElementSocket(listeClient, from);
     element* tmp = listeClient->head;
     while(tmp != NULL && tmp->isConnected == 1){
-        if(tmp->dSC != from){
+        if(tmp->dSC != from && tmp->canal == expedi->canal){
             send(tmp->dSC, msg, MAX_LENGTH, 0);
         }
         tmp = tmp->nxt;
