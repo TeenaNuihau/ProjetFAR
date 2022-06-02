@@ -9,9 +9,9 @@
 #include <regex.h>
 #include <dirent.h>
 
-#define MAX_LENGTH 1000 //Max length of pseudo
+#define MAX_LENGTH 1500 //Max length of string
 #define SIZE 1024 // Taille du buffer de réception
-#define PORT 3002 //Port of the server
+#define PORT 3001 //Port of the server
 
 
 char pseudo[100]; // Pseudo of the client
@@ -19,8 +19,8 @@ char* ipServer; // IP of the server
 static volatile int keepRunning = 1; // 0 = stop, 1 = run
 int dS;  // Socket of the client
 pthread_t thread[4]; // 0 for receive and 1 for send and 2 for file send thread 3 for file receive thread
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int color; // Color of the client (0 = blanc, 1 = bleu, 2 = vert, 3 = orange, 4 = cyan, 5 = rouge)
 
 char* mostRecentFileName;
 
@@ -81,10 +81,7 @@ int listfiles(int c){
     return cpt;
 }
 
-void send_file(FILE *fp, int sockfd){
-
-}
-// returns 1 if the message is a file send command, 0 otherwise
+// returns 0 if the message is a file send command, 1 otherwise
 int file_command(char* msg){
     int file;
     regex_t preg;
@@ -182,8 +179,24 @@ int file_responseSuccessCode(char* msg){
     return match;
 }
 
+int color_command(char* msg){
+    int color;
+    regex_t preg;
+    const char *color_regex = "^/color";
+    // Commande color
+    color = regcomp (&preg, color_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    int match = 1;
+    if(color == 0){
+
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+    }
+    return match;
+}
+
 // Function to download files from server
-void receiveFile_command() {
+void* receiveFile_command() {
     // Connexion to the new socket of the server file send service
     int sockfd_file;
     struct sockaddr_in serv_addr;
@@ -211,7 +224,7 @@ void receiveFile_command() {
     printf("Taille du nom du fichier : %d\n",taille);
     printf("Reception du nom du fichier\n");
     char* fileName = (char *) malloc(taille * sizeof (char));
-    recv(sockfd_file, fileName, MAX_LENGTH, 0);
+    recv(sockfd_file, fileName, taille, 0);
     printf("Nom du fichier : %s\n", fileName);
 
     // Fichier
@@ -245,7 +258,7 @@ void receiveFile_command() {
 }
 
 // Fonction to send a file
-void sendFile_command() {
+void* sendFile_command() {
     // Connexion to the new socket of the server file send service
     int sockfd_file;
     struct sockaddr_in serv_addr;
@@ -266,7 +279,7 @@ void sendFile_command() {
     // Send the file name
     printf("mostRecentfilename : %s", mostRecentFileName);
 ;
-    int tailleF=(strlen(mostRecentFileName)+1)*sizeof(char);
+    int tailleF=(strlen(mostRecentFileName))*sizeof(char);
     printf("\ntailleF : %d",tailleF);
     send(sockfd_file, &tailleF, sizeof(int), 0);
     send(sockfd_file, mostRecentFileName, strlen(mostRecentFileName), 0);
@@ -277,7 +290,7 @@ void sendFile_command() {
     FILE* fp = fopen(path, "rb");
     if (fp == NULL) {
         printf("Erreur lors de la lecture du fichier \n Veuillez réessayer.");
-        return;
+        return 0;
     }
 
     printf("Sending file size \n");
@@ -317,7 +330,6 @@ void recevoir(int* s){
         recv(*s, m, MAX_LENGTH, 0);
         // Stands for the response of the server in case of starting sending a file
         if(file_responseSendCode(m) == 0){
-
             pthread_create(&thread[2], NULL, sendFile_command, NULL);
 
         } // Stands for the response of the server of the conclusion of the file send service
@@ -341,7 +353,26 @@ void envoyer(int* s){
     char* m2 = "/dc\\0";
     while(keepRunning){
         bzero(m,MAX_LENGTH);
-        printrouge("\nvous : ");
+        switch (color) { //change the color of the text in the terminal
+            case 0:
+                printf("\nvous : ");
+                break;
+            case 1:
+                printbleu("\nvous : ");
+                break;
+            case 2:
+                printvert("\nvous : ");
+                break;
+            case 3:
+                printorange("\nvous : ");
+                break;
+            case 4:
+                printcyan("\nvous : ");
+                break;
+            case 5:
+                printrouge("\nvous : ");
+                break;
+        }
         fgets( m, MAX_LENGTH, stdin );
         // if file command
         if (file_command(m)==0) {
@@ -360,6 +391,12 @@ void envoyer(int* s){
         else if (strcmp(m,m2) == 0){
             printf("\nDéconnexion\n");
             turnOff(0);
+        }
+        else if(color_command(m) == 0){
+            //get the int value of the color
+            char* colorMsg = strtok(m, " ");
+            colorMsg = strtok(NULL, " ");
+            color = atoi(colorMsg);
         }
         // else send to server as it is
         else {

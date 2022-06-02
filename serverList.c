@@ -15,15 +15,22 @@
 #include <dirent.h>
 
 
-#define PORT 3002 //Port of the server
+#define PORT 3001 //Port of the server
+#define MAX_CANALS 10 //Max number of canals
 
 
-Liste *listeClient;
-sem_t semaphore;
-pthread_t fileThread[20];
-int nbFileThread = 0;
-int dSocketFile;
-char* mostRecentFile;
+Liste *listeClient; //Liste des clients
+sem_t semaphore; //Semaphore pour le mutex
+pthread_t fileThread[20]; //Tableau de thread pour les fichiers
+static volatile int keepRunning = 1; //Variable pour la boucle de l'écoute
+int canaux[MAX_CANALS]; //Tableau des canaux
+int nextCanalID = 1; //ID du prochain canal
+int nextCanalIndice = 0; //Indice du prochain canal
+int nbFileThread = 0; //Nombre de thread pour les fichiers
+int dSocketFile; //Socket du thread fichier
+char* mostRecentFile; //Nom du fichier le plus récent
+
+
 
 void ajouterClient(int socket, char* pseudo){
     sem_wait(&semaphore);
@@ -47,6 +54,116 @@ void envoyerMessage(char* msg, int from){
         tmp = tmp->nxt;
     }
 }
+
+void creerListeCanaux(){
+    // Get all the canaux in the file listeCanaux.txt and put them in the canaux array
+    FILE* fichier = fopen("serverConfig/listeCanaux.txt", "r");
+    char ligne[MAX_LENGTH];
+    while(fgets(ligne, MAX_LENGTH, fichier) != NULL){
+        canaux[nextCanalIndice] = atoi(ligne);
+        nextCanalIndice++;
+        if(atoi(ligne) >= nextCanalID){
+            nextCanalID = atoi(ligne) + 1;
+        }
+    }
+    fclose(fichier);
+}
+
+void enregistrerCanaux(){
+   // Save all the current canaux in the file listeCanaux.txt
+    FILE* fichier = fopen("serverConfig/listeCanaux.txt", "w+");
+    int i = 0;
+    while(i < MAX_CANALS){
+        if (canaux[i] > 0){
+            fprintf(fichier, "%d\n", canaux[i]);
+        }
+        i++;
+    }
+    fclose(fichier);
+}
+
+void ajouterCanal(int socket){
+    char* msg = (char*)malloc(MAX_LENGTH);
+    if(nextCanalIndice < MAX_CANALS){
+        canaux[nextCanalIndice] = nextCanalID;
+        nextCanalIndice++;
+        nextCanalID++;
+        sprintf(msg, "Canal créé : %d", nextCanalID - 1);
+    } else {
+        sprintf(msg, "Impossible de créer de nouveau canal");
+    }
+    send(socket, msg, MAX_LENGTH, 0);
+}
+
+void supprimerCanal(int id){
+    //Remove all the clients in the canal and push them to the default canal (0)
+    element* tmp = listeClient->head;
+    while(tmp != NULL){
+        if(tmp->canal == id){
+            tmp->canal = 0;
+            send(tmp->dSC, "Vous avez été déplacé dans le canal par défaut", MAX_LENGTH, 0);
+        }
+        tmp = tmp->nxt;
+    }
+    //Remove the canal from the canaux array
+    int i = 0;
+    while(i < MAX_CANALS){
+        if(canaux[i] == id){
+            canaux[i] = 0;
+            break;
+        }
+        i++;
+    }
+}
+
+int canalExiste(int id){
+    int i = 0;
+    while(i < MAX_CANALS){
+        if(canaux[i] == id){
+            return 1;
+        }
+        i++;
+    }
+    return 0;
+}
+
+void envoyerListeCanaux(int socket){
+    char* msg = (char*)malloc(MAX_LENGTH);
+    sprintf(msg, "Liste des canaux : \n");
+    int i = 0;
+    while(i < MAX_CANALS){
+        char* canal = (char*)malloc(MAX_LENGTH);
+        if(canaux[i] > 0){
+            sprintf(canal, "Canal %d\n", canaux[i]);
+            strcat(msg, canal);
+        }
+        i++;
+    }
+    send(socket, msg, MAX_LENGTH, 0);
+}
+
+void connecterToCanal(int socketClient, int idCanal){
+    element* expedi = rechercherElementSocket(listeClient, socketClient);
+    char* msg = (char*)malloc(MAX_LENGTH);
+    if(expedi != NULL && canalExiste(idCanal)){
+        expedi->canal = idCanal;
+        sprintf(msg, "Connecté au canal %d", idCanal);
+    } else {
+        sprintf(msg, "Impossible de se connecter au canal %d", idCanal);
+    }
+    send(socketClient, msg, MAX_LENGTH, 0);
+}
+
+void deconnecterFromCanal(int socketClient){
+    element* expedi = rechercherElementSocket(listeClient, socketClient);
+    if(expedi != NULL){
+        expedi->canal = 0;
+        char* msg = (char*)malloc(MAX_LENGTH);
+        sprintf(msg, "Déconnecté du canal \n Vous êtes maintenant dans le canal général");
+        send(socketClient, msg, MAX_LENGTH, 0);
+    }
+}
+
 
 char* getfilename(int n) {
     char* filename = malloc(sizeof(char) * MAX_LENGTH);
@@ -102,8 +219,7 @@ void send_file(int sockfd){
     socklen_t lgF = sizeof(struct sockaddr_in) ;// Means for the client to connect to the file send service on port 4000
     int dSC = accept(dSocketFile, (struct sockaddr*)&aF, &lgF); // Accept the connection
     printf("Connection acceptée pour envoi\n");
-    int tailleF=(strlen(filename)+1)*sizeof(char);
-    printf("\ntailleF : %d",tailleF);
+    int tailleF=(strlen(filename))*sizeof(char);
     send(dSC, &tailleF, sizeof(int), 0);
     send(dSC, filename, strlen(filename), 0);
     printf("Opening file\n");
@@ -142,6 +258,19 @@ void send_file(int sockfd){
     shutdown(dSC,2);
     nbFileThread--;
     pthread_exit(NULL);
+}
+
+void kickClient(int from, char* pseudo){
+    element* banneur = rechercherElementSocket(listeClient, from);
+    element* banni = rechercherElementPseudo(listeClient, pseudo);
+    if(banni != NULL){
+        char* msg = (char*)malloc(MAX_LENGTH);
+        sprintf(msg, "Vous avez été expulsé de la messagerie par %s", banneur->pseudo);
+        char* dc = (char*)malloc(MAX_LENGTH);
+        sprintf(dc, "/dc");
+        send(banni->dSC, msg, MAX_LENGTH, 0);
+        send(banni->dSC, dc, MAX_LENGTH, 0);
+    }
 }
 
 void write_file(int sockfd){
@@ -205,6 +334,12 @@ void redirection(char* msg, int socket) {
     int listfile;
     int dlfile;
     int listcanal;
+    int ccanal;
+    int dcanal;
+    int cgcanal;
+    int dccanal;
+    int canals;
+    int kick;
     regex_t preg;
     const char *mp_regex = "^/mp";
     const char *man_regex = "^/man";
@@ -212,7 +347,7 @@ void redirection(char* msg, int socket) {
     const char *list_regex = "^/list";
     const char *file_regex = "^/file";
     const char *listfile_regex = "^/dllist";
-    const char *listcanal_regex = "^/listcanal";
+    const char *listcanal_regex = "^/canallist";
     const char *dlfile_regex = "^/dlfile";
 
     // Commande mp
@@ -296,13 +431,15 @@ void redirection(char* msg, int socket) {
         regfree (&preg);
 
         if (match == 0) {
-            //envoyerListCanaux(socket);
+            //get the canal of the client
+            element* client = rechercherElementSocket(listeClient, socket);
+            envoyerListClientsCanal(socket, client->canal,listeClient);
         }
     }
 
     // Commande dlfile
     dlfile = regcomp (&preg, dlfile_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
-    if (listcanal == 0) {
+    if (dlfile == 0) {
         int match;
         match = regexec (&preg, msg, 0, NULL, 0);
         regfree (&preg);
@@ -316,11 +453,30 @@ void redirection(char* msg, int socket) {
             nbFileThread++;
         }
     }
+    // Commande kick
+    kick = regcomp (&preg, kick_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (kick == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            char* pseudoR = strtok(msg, " ");
+            pseudoR = strtok(NULL, " ");
+            size_t taille = strlen(pseudoR)-1;
+            char pseudo[taille];
+            strncpy(pseudo,pseudoR,(size_t)(taille));
+            pseudo[taille]='\0';
+            printf("pseudo a kick : %s\n",pseudo);
+            kickClient(socket, pseudo);
+        }
+    }
 }
 
 void traitementClient(element* client){
     char msg[MAX_LENGTH];
     printf("Client %d connected\n", client->dSC);
+    commandManual(client->dSC); //affiche les commandes disponibles
     while(client->isConnected == 1){
         if(recv(client->dSC, msg, MAX_LENGTH, 0)!=-1){
             printf("Message reçu de %s : %s\n", client->pseudo, msg);
@@ -339,9 +495,24 @@ void traitementClient(element* client){
 
 }
 
+void turnOff(int signal){
+    //disconnect all clients
+    element* client = listeClient->head;
+    while(client != NULL){
+        send(client->dSC, "Server is going down\n", MAX_LENGTH, 0);
+        disconnectClient(client->dSC,listeClient);
+        client = client->nxt;
+    }
+    keepRunning = 0;
+    enregistrerCanaux();
+    exit(1);
+}
+
 int main(int argc, char** argv){
     listeClient = creerListe();
     mostRecentFile = (char*) malloc(MAX_LENGTH);
+    creerListeCanaux();
+    signal(SIGINT, turnOff);
     printf("Début programme\n");
 
     int dS = socket(PF_INET, SOCK_STREAM, 0);
@@ -373,7 +544,7 @@ int main(int argc, char** argv){
     listen(dSocketFile, 7);
 
 
-    while(listeClient->nbElements < MAX_CLIENTS){
+    while(listeClient->nbElements < MAX_CLIENTS && keepRunning){
         afficherListe(listeClient);
         int dSC = accept(dS, (struct sockaddr*)&aC, &lg);
         printf("Client connecté\n");
@@ -390,10 +561,7 @@ int main(int argc, char** argv){
         pthread_create(&thread[listeClient->nbElements - 1], NULL, traitementClient, listeClient->head);
         printf("Thread créé\n");
     }
-
-
-
-
+    shutdown(dS, SHUT_RDWR);
     return 0;
 
 }

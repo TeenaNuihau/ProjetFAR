@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define MAX_LENGTH 1000
-#define MAX_CLIENTS 50
 #define SIZE 1024
+#define MAX_LENGTH 1500
+
+#define MAX_CLIENTS 50
+
 
 typedef struct element element;
 struct element
@@ -50,7 +51,7 @@ void disconnectClient(int socket, Liste *liste);
 
 void envoyerListClients(int socket, Liste *liste);
 
-// void envoyerListCanaux(int socket);
+void envoyerListClientsCanal(int socket,int canal, Liste *liste);
 
 void creerCanal();
 
