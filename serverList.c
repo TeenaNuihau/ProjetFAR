@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <pthread.h>
 #include <time.h>
 #include <semaphore.h>
