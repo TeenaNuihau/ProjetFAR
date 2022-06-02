@@ -11,7 +11,7 @@
 #include <time.h>
 #include <semaphore.h>
 #include <regex.h>
-#include "list.h"
+#include "help.h"
 #include <dirent.h>
 
 
@@ -49,7 +49,9 @@ void envoyerMessage(char* msg, int from){
     element* tmp = listeClient->head;
     while(tmp != NULL && tmp->isConnected == 1){
         if(tmp->dSC != from && tmp->canal == expedi->canal){
-            send(tmp->dSC, msg, MAX_LENGTH, 0);
+            char* msg_final = (char*) malloc(MAX_LENGTH);
+            sprintf(msg_final, "[Canal %d] %s",expedi->canal,msg);
+            send(tmp->dSC, msg_final, MAX_LENGTH, 0);
         }
         tmp = tmp->nxt;
     }
@@ -349,6 +351,12 @@ void redirection(char* msg, int socket) {
     const char *listfile_regex = "^/dllist";
     const char *listcanal_regex = "^/canallist";
     const char *dlfile_regex = "^/dlfile";
+    const char *ccanal_regex = "^/canalcr";
+    const char *dcanal_regex = "^/canaldl";
+    const char *cgcanal_regex = "^/canalcg";
+    const char *dccanal_regex = "^/canaldc";
+    const char *canals_regex = "^/canals";
+    const char *kick_regex = "^/kick";
 
     // Commande mp
     mp = regcomp (&preg, mp_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
@@ -434,6 +442,86 @@ void redirection(char* msg, int socket) {
             //get the canal of the client
             element* client = rechercherElementSocket(listeClient, socket);
             envoyerListClientsCanal(socket, client->canal,listeClient);
+        }
+    }
+
+    // Commande ccanal
+    ccanal = regcomp (&preg, ccanal_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (ccanal == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            //create channel
+            ajouterCanal(socket);
+        }
+    }
+
+    // Commande dcanal
+    dcanal = regcomp (&preg, dcanal_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (dcanal == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            //delete channel and redirect client to channel 0
+            element* client = rechercherElementSocket(listeClient, socket);
+            int idCanal = client->canal;
+            char* rep = (char*) malloc(MAX_LENGTH);
+            if (idCanal == 0){
+                strcpy(rep, "Vous ne pouvez pas supprimer le canal 0");
+            }
+            else{
+                supprimerCanal(idCanal);
+                strcpy(rep, "Vous avez bien supprimer le canal");
+            }
+            send(socket, rep, MAX_LENGTH, 0);
+        }
+    }
+
+    // Commande cgcanal
+    cgcanal = regcomp (&preg, cgcanal_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (cgcanal == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            //delete channel and redirect client to channel 0
+            element* client = rechercherElementSocket(listeClient, socket);
+            char* idcanal = strtok(msg, " ");
+            idcanal = strtok(NULL, " ");
+            int numcanal = atoi(idcanal);
+            connecterToCanal(socket, numcanal);
+        }
+    }
+
+    // Commande dccanal
+    dccanal = regcomp (&preg, dccanal_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (dccanal == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            //delete channel and redirect client to channel 0
+            element* client = rechercherElementSocket(listeClient, socket);
+            connecterToCanal(socket, 0);
+        }
+    }
+
+    // Commande canals
+    canals = regcomp (&preg, canals_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    if (canals == 0) {
+        int match;
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+        if (match == 0) {
+            envoyerListeCanaux(socket);
+
         }
     }
 

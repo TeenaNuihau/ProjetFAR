@@ -98,11 +98,28 @@ int file_command(char* msg){
     return match;
 }
 
+// returns 0 if the message is dc command, 1 otherwise
+int dc_command(char* msg){
+    int dc;
+    regex_t preg;
+    const char *file_regex = "^/dc";
+    // Commande dc
+    dc = regcomp (&preg, file_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
+    int match = 1;
+    if(dc == 0){
+
+        match = regexec (&preg, msg, 0, NULL, 0);
+        regfree (&preg);
+
+    }
+    return match;
+}
+
 int filelist_command(char* msg){
     int file;
     regex_t preg;
     const char *file_regex = "^/listfile";
-    // Commande file
+    // Commande listfile
     file = regcomp (&preg, file_regex, REG_NOSUB | REG_EXTENDED | REG_ICASE);
     int match = 1;
     if(file == 0){
@@ -339,6 +356,15 @@ void recevoir(int* s){
         } else if (file_responseRecieveCode(m)==0){
             printf("File sent sequence start\n");
             pthread_create(&thread[4], NULL, receiveFile_command, NULL);
+        }
+
+        else if (dc_command(m)==0){
+            /*
+            char* msg = (char*) malloc(MAX_LENGTH);
+            sprintf(msg, "%s", "/dc");
+            send(*s, msg, MAX_LENGTH, 0);
+             */
+            raise(SIGINT);
         }
         else {
             printf("\n%s",m);
